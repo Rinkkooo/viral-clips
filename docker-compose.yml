@@ -1,0 +1,40 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: viral-clips:latest
+    container_name: viral_clips_api
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+      - DATABASE_URL=sqlite:///./storage/viral_clips.db
+      - REDIS_URL=redis://redis:6379/0
+      - GPU_WORKER_CONCURRENCY=1
+      - USE_NVENC=true
+    volumes:
+      - ./storage:/app/storage
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu, video]
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    container_name: viral_clips_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
